@@ -1,9 +1,3 @@
-/**
- * Author: Michael Hadley, mikewesthad.com
- * Asset Credits:
- *  - Phaser, Rich Davey, Ilija Melentijević
- */
-
 import { connectToServer, askNewPlayer, sendPosUpdate } from "./client.js";
 function choose(choices) {
     var index = Math.floor(Math.random() * choices.length);
@@ -40,7 +34,7 @@ const Game = new Phaser.Game(config);
 let scene;
 let controls;
 let cursors;
-const NUM_CPUS = 4000;
+const NUM_CPUS = 10;
 let player, jellies, chickens, cpus;
 let dinos = ["raptor", "ptero", "trex", "trice"];
 let dino;
@@ -49,11 +43,12 @@ let playerMap = {};
 
 function preload() {
     scene = this;
-    this.load.image("tiles", "../assets/tilesets/tuxmon-sample-32px.png");
-    this.load.image("tiles2", "../assets/tilesets/rpg.png");
-    this.load.tilemapCSV("ground", "../assets/tilemaps/ground.csv");
-    this.load.tilemapCSV("water", "../assets/tilemaps/water.csv");
-    this.load.tilemapCSV("trees", "../assets/tilemaps/trees.csv");
+    this.load.image("tiles", "../assets/tilemaps/tuxmon-sample-32px.png");
+    this.load.image("tiles2", "../assets/tilemaps/rpg.png");
+    //this.load.tilemapCSV("ground", "../assets/tilemaps/ground.csv");
+    //this.load.tilemapCSV("water", "../assets/tilemaps/water.csv");
+    //this.load.tilemapCSV("trees", "../assets/tilemaps/trees.csv");
+    this.load.tilemapTiledJSON("map", "../assets/tilemaps/map.json");
     this.load.spritesheet('raptor', 'assets/sprites/raptor.png', { frameWidth: 32, frameHeight: 32 });
     this.load.spritesheet('ptero', 'assets/sprites/ptero.png', { frameWidth: 32, frameHeight: 32 });
     this.load.spritesheet('trex', 'assets/sprites/trex.png', { frameWidth: 64, frameHeight: 64 });
@@ -61,7 +56,7 @@ function preload() {
     this.load.spritesheet('jelly', 'assets/sprites/jelly.png', { frameWidth: 32, frameHeight: 32 });
     this.load.spritesheet('chicken', 'assets/sprites/chicken.png', { frameWidth: 32, frameHeight: 32 });
 
-    for (let i = 1; i <= NUM_CPUS; i++){
+    for (let i = 1; i <= NUM_CPUS; i++) {
         let number = i.toString().padStart(4, '0');
         let filename = number + ".png";
         this.load.spritesheet(number, 'assets/ai_sprites/' + filename, { frameWidth: 64, frameHeight: 64 });
@@ -74,30 +69,39 @@ function create() {
     connectToServer();
     timer = 0;
     // When loading a CSV map, make sure to specify the tileWidth and tileHeight!
-    const groundMap = this.make.tilemap({ key: "ground", tileWidth: 32, tileHeight: 32 });
-    const waterMap = this.make.tilemap({ key: "water", tileWidth: 32, tileHeight: 32 });
-    const treesMap = this.make.tilemap({ key: "trees", tileWidth: 32, tileHeight: 32 });
-    const groundTileset = groundMap.addTilesetImage("tiles");
-    const waterTileset = waterMap.addTilesetImage("tiles");
-    const treesTileset = treesMap.addTilesetImage("tiles2");
-    const groundLayer = groundMap.createLayer(0, groundTileset, 0, 0); // layer index, tileset, x, y
-    const waterLayer = waterMap.createLayer(0, waterTileset, 0, 0); // layer index, tileset, x, y
-    const treesLayer = treesMap.createLayer(0, treesTileset, 0, 0); // layer index, tileset, x, y
+    //const groundMap = this.make.tilemap({ key: "ground", tileWidth: 32, tileHeight: 32 });
+    //const waterMap = this.make.tilemap({ key: "water", tileWidth: 32, tileHeight: 32 });
+    //const treesMap = this.make.tilemap({ key: "trees", tileWidth: 32, tileHeight: 32 });
+    const map = this.make.tilemap({ key: "map" });
+    //const groundTileset = groundMap.addTilesetImage("tiles");
+    //const waterTileset = waterMap.addTilesetImage("tiles");
+    //const treesTileset = treesMap.addTilesetImage("tiles2");
+    const tuxmon = map.addTilesetImage("Tuxmon", "tiles");
+    const rpg = map.addTilesetImage("RPG", "tiles2");
+    //const groundLayer = groundMap.createLayer(0, groundTileset, 0, 0); // layer index, tileset, x, y
+    const groundLayer = map.createLayer("ground", tuxmon, 0, 0); // layer index, tileset, x, y
+    console.log(groundLayer);
+    //const waterLayer = waterMap.createLayer(0, waterTileset, 0, 0); // layer index, tileset, x, y
+    const waterLayer = map.createLayer("water", tuxmon, 0, 0); // layer index, tileset, x, y
+    console.log(waterLayer);
+    //const treesLayer = treesMap.createLayer(0, treesTileset, 0, 0); // layer index, tileset, x, y
+    const treesLayer = map.createLayer("trees", rpg, 0, 0); // layer index, tileset, x, y
+    console.log(treesLayer);
 
     dino = choose(dinos);
     player = this.physics.add
         .sprite(32, 32, dino);
     //player.setScale(2, 2);
-    player.setPosition(groundMap.widthInPixels / 2, groundMap.heightInPixels / 2 - 32 * 16);
+    player.setPosition(map.widthInPixels / 2 - 32 * 4, map.heightInPixels / 2 - 32 * 16);
     askNewPlayer(dino);
 
-    waterLayer.setCollision(248);
+    waterLayer.setCollision(249);
+    treesLayer.setCollision(722);
     this.physics.add.collider(player, waterLayer);
-    treesLayer.setCollision(1);
     this.physics.add.collider(player, treesLayer);
 
     cpus = this.physics.add.group();
-    for (let i = 1; i <= NUM_CPUS; i++){
+    for (let i = 1; i <= NUM_CPUS; i++) {
         let number = i.toString().padStart(4, '0');
         let filename = number + ".png";
         //this.load.spritesheet('dino' + number, 'assets/ai_sprites/' + filename, { framewidth: 64, frameHeight: 64 });
@@ -127,8 +131,12 @@ function create() {
             repeat: -1
         });
 
-        cpus.create(groundMap.widthInPixels / 2, groundMap.heightInPixels / 2 - 32 * 16, number);
+        cpus.create(map.widthInPixels / 2 - 32 * 4, map.heightInPixels / 2 - 32 * 16, number);
     }
+    cpus.children.iterate((cpu) => {
+        this.physics.add.collider(cpu, waterLayer);
+        this.physics.add.collider(cpu, treesLayer);
+    }, this);
 
     //jelly = this.physics.add
     //    .sprite(96, 96, 'jelly');
@@ -212,10 +220,10 @@ function create() {
 
     const camera = this.cameras.main;
     camera.startFollow(player);
-    camera.setBounds(0, 0, groundMap.widthInPixels, groundMap.heightInPixels);
+    camera.setBounds(0, 0, map.widthInPixels, map.heightInPixels);
     cursors = this.input.keyboard.createCursorKeys();
 
-    this.physics.world.setBounds(0, 0, groundMap.widthInPixels, groundMap.heightInPixels);
+    this.physics.world.setBounds(0, 0, map.widthInPixels, map.heightInPixels);
     // jellies = this.physics.add.group({
     //     key: 'jelly',
     //     quantity: 10,
