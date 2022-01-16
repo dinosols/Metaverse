@@ -30,7 +30,7 @@ export class NameInputScene extends Phaser.Scene {
         this.returnKey.on("down", event => {
             let name = this.nameInput.getChildByName("name");
             if (name.value != "") {
-                this.scene.start('MetaverseScene', {name: name.value});
+                this.scene.start('DinoSelectScene', {name: name.value});
             }
         });
     }

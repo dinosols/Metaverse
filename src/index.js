@@ -1,9 +1,7 @@
 import { NameInputScene } from "./NameInputScene";
+import { DinoSelectScene } from "./DinoSelectScene";
 import { MetaverseScene } from "./MetaverseScene";
 
-const ratio = Math.max(window.innerWidth / window.innerHeight, window.innerHeight / window.innerWidth)
-const DEFAULT_HEIGHT = 720 // any height you want
-const DEFAULT_WIDTH = ratio * DEFAULT_HEIGHT
 const ZOOM_LEVEL = 1;
 
 const config = {
@@ -21,7 +19,7 @@ const config = {
         createContainer: true
     },
     scene: [
-        NameInputScene, MetaverseScene
+        NameInputScene, DinoSelectScene, MetaverseScene
     ],
     scale: {
         mode: Phaser.Scale.NONE,

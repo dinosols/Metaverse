@@ -12,7 +12,7 @@ export class MetaverseScene extends Phaser.Scene {
     jellies;
     chickens;
     cpus;
-    dinos = ["raptor", "ptero", "trex", "trice"];
+    //dinos = ["raptor", "ptero", "trex", "trice"];
     dino;
     timer;
     playerMap = {};
@@ -23,30 +23,41 @@ export class MetaverseScene extends Phaser.Scene {
 
     init(data) {
         this.playerName = data.name;
+        this.playerSpriteURL = data.sprite;
+        this.playerMetadata = data.metadata;
     }
 
     preload() {
-        //scene = this;
+        console.log(this.playerMetadata);
+        for (const trait of this.playerMetadata.attributes) {
+            if (trait.trait_type === "Species") {
+                this.playerSpecies = trait.value;
+                break;
+            }
+        }
+
         this.load.image("tiles", "../assets/tilemaps/tuxmon-sample-32px.png");
         this.load.image("tiles2", "../assets/tilemaps/rpg.png");
-        //this.load.tilemapCSV("ground", "../assets/tilemaps/ground.csv");
-        //this.load.tilemapCSV("water", "../assets/tilemaps/water.csv");
-        //this.load.tilemapCSV("trees", "../assets/tilemaps/trees.csv");
         this.load.tilemapTiledJSON("map", "../assets/tilemaps/map.json");
-        this.load.spritesheet('raptor', 'assets/sprites/raptor.png', { frameWidth: 32, frameHeight: 32 });
-        this.load.spritesheet('ptero', 'assets/sprites/ptero.png', { frameWidth: 32, frameHeight: 32 });
-        this.load.spritesheet('trex', 'assets/sprites/trex.png', { frameWidth: 64, frameHeight: 64 });
-        this.load.spritesheet('trice', 'assets/sprites/trice.png', { frameWidth: 64, frameHeight: 64 });
-        this.load.spritesheet('jelly', 'assets/sprites/jelly.png', { frameWidth: 32, frameHeight: 32 });
-        this.load.spritesheet('chicken', 'assets/sprites/chicken.png', { frameWidth: 32, frameHeight: 32 });
+
+        if (this.playerSpecies === "Triceratops" || this.playerSpecies === "Tyrannosaurus") {
+            this.load.spritesheet('player', this.playerSpriteURL, { frameWidth: 64, frameHeight: 64 });
+        }
+        else {
+            this.load.spritesheet('player', this.playerSpriteURL, { frameWidth: 32, frameHeight: 32 });
+        }
+        // this.load.spritesheet('raptor', 'assets/sprites/raptor.png', { frameWidth: 32, frameHeight: 32 });
+        // this.load.spritesheet('ptero', 'assets/sprites/ptero.png', { frameWidth: 32, frameHeight: 32 });
+        // this.load.spritesheet('trex', 'assets/sprites/trex.png', { frameWidth: 64, frameHeight: 64 });
+        // this.load.spritesheet('trice', 'assets/sprites/trice.png', { frameWidth: 64, frameHeight: 64 });
+        // this.load.spritesheet('jelly', 'assets/sprites/jelly.png', { frameWidth: 32, frameHeight: 32 });
+        // this.load.spritesheet('chicken', 'assets/sprites/chicken.png', { frameWidth: 32, frameHeight: 32 });
 
         for (let i = 1; i <= this.NUM_CPUS; i++) {
             let number = i.toString().padStart(4, '0');
             let filename = number + ".png";
             this.load.spritesheet(number, 'assets/ai_sprites/' + filename, { frameWidth: 64, frameHeight: 64 });
         }
-
-        //this.load.html('nameform', 'assets/text/nameform.html');
     }
 
     create() {
@@ -72,9 +83,9 @@ export class MetaverseScene extends Phaser.Scene {
         const treesLayer = map.createLayer("trees", rpg, 0, 0); // layer index, tileset, x, y
         console.log(treesLayer);
 
-        this.dino = choose(this.dinos);
+        //this.dino = choose(this.dinos);
         this.playerSprite = this.physics.add
-            .sprite(32, 32, this.dino)
+            .sprite(32, 32, "player")
             .setOrigin(0.5);
         this.playerUsername = this.add.text(0, 0, this.playerName, {
             fontFamily: 'Arial',
@@ -87,7 +98,7 @@ export class MetaverseScene extends Phaser.Scene {
         this.physics.world.enable(this.player);
         //player.setScale(2, 2);
         this.player.setPosition(map.widthInPixels / 2 - 32 * 4, map.heightInPixels / 2 - 32 * 16);
-        askNewPlayer(this.dino);
+        askNewPlayer("player");
 
         waterLayer.setCollision(249);
         treesLayer.setCollision(722);
@@ -140,32 +151,32 @@ export class MetaverseScene extends Phaser.Scene {
         //jelly = this.physics.add
         //    .sprite(96, 96, 'jelly');
 
-        for (const dinoType of this.dinos) {
+        //for (const dinoType of this.dinos) {
             this.anims.create({
-                key: dinoType + '-front-walk',
-                frames: this.anims.generateFrameNumbers(dinoType, { frames: [0, 1, 2, 1] }),
+                key: "player" + '-front-walk',
+                frames: this.anims.generateFrameNumbers("player", { frames: [0, 1, 2, 1] }),
                 frameRate: 8,
                 repeat: -1
             });
             this.anims.create({
-                key: dinoType + '-right-walk',
-                frames: this.anims.generateFrameNumbers(dinoType, { frames: [3, 4, 5, 4] }),
+                key: "player" + '-right-walk',
+                frames: this.anims.generateFrameNumbers("player", { frames: [3, 4, 5, 4] }),
                 frameRate: 8,
                 repeat: -1
             });
             this.anims.create({
-                key: dinoType + '-left-walk',
-                frames: this.anims.generateFrameNumbers(dinoType, { frames: [6, 7, 8, 7] }),
+                key: "player" + '-left-walk',
+                frames: this.anims.generateFrameNumbers("player", { frames: [6, 7, 8, 7] }),
                 frameRate: 8,
                 repeat: -1
             });
             this.anims.create({
-                key: dinoType + '-back-walk',
-                frames: this.anims.generateFrameNumbers(dinoType, { frames: [9, 10, 11, 10] }),
+                key: "player" + '-back-walk',
+                frames: this.anims.generateFrameNumbers("player", { frames: [9, 10, 11, 10] }),
                 frameRate: 8,
                 repeat: -1
             });
-        }
+        //}
 
         // this.anims.create({
         //     key: 'jelly-front-walk',
@@ -289,21 +300,21 @@ export class MetaverseScene extends Phaser.Scene {
 
         // Update the animation last and give left/right animations precedence over up/down animations
         if (this.cursors.left.isDown) {
-            this.playerSprite.anims.play(this.dino + "-left-walk", true);
+            this.playerSprite.anims.play("player" + "-left-walk", true);
         } else if (this.cursors.right.isDown) {
-            this.playerSprite.anims.play(this.dino + "-right-walk", true);
+            this.playerSprite.anims.play("player" + "-right-walk", true);
         } else if (this.cursors.up.isDown) {
-            this.playerSprite.anims.play(this.dino + "-back-walk", true);
+            this.playerSprite.anims.play("player" + "-back-walk", true);
         } else if (this.cursors.down.isDown) {
-            this.playerSprite.anims.play(this.dino + "-front-walk", true);
+            this.playerSprite.anims.play("player" + "-front-walk", true);
         } else {
             this.playerSprite.anims.stop();
 
             // If we were moving, pick and idle frame to use
-            if (prevVelocity.y > 0) this.playerSprite.setTexture(this.dino, 1);
-            else if (prevVelocity.x > 0) this.playerSprite.setTexture(this.dino, 3);
-            else if (prevVelocity.x < 0) this.playerSprite.setTexture(this.dino, 7);
-            else if (prevVelocity.y < 0) this.playerSprite.setTexture(this.dino, 10);
+            if (prevVelocity.y > 0) this.playerSprite.setTexture("player", 1);
+            else if (prevVelocity.x > 0) this.playerSprite.setTexture("player", 3);
+            else if (prevVelocity.x < 0) this.playerSprite.setTexture("player", 7);
+            else if (prevVelocity.y < 0) this.playerSprite.setTexture("player", 10);
         }
 
         this.timer += delta;

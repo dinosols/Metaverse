@@ -23,7 +23,12 @@ module.exports = {
         modules: [
             ROOT,
             'node_modules'
-        ]
+        ],
+        fallback: {
+            "crypto": false,
+            "stream": require.resolve("stream-browserify"),
+            "buffer": require.resolve("buffer")
+        }
     },
 
     plugins: [
@@ -32,7 +37,13 @@ module.exports = {
                 { from: 'assets', to: 'assets' },
                 { from: 'index.html', to: 'index.html'}
             ]
-        })
+        }),
+        new webpack.ProvidePlugin({
+            Buffer: ['buffer', 'Buffer'],
+        }),
+        new webpack.ProvidePlugin({
+            process: 'process/browser',
+        }),
     ],
 
     module: {
