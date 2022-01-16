@@ -5,7 +5,7 @@ export class MetaverseScene extends Phaser.Scene {
     //scene;
     controls;
     cursors;
-    NUM_CPUS = 10;
+    NUM_CPUS = 1000;
     player;
     playerSprite;
     playerUsername;
@@ -96,8 +96,27 @@ export class MetaverseScene extends Phaser.Scene {
         this.player.add(this.playerUsername);
         this.playerUsername.setPosition(this.playerSprite.x, this.playerSprite.y);
         this.physics.world.enable(this.player);
-        //player.setScale(2, 2);
-        this.player.setPosition(map.widthInPixels / 2 - 32 * 4, map.heightInPixels / 2 - 32 * 16);
+
+        let playerX, playerY;
+        let loop = true;
+        do {
+            playerX = Math.floor(Math.random() * map.width);
+            playerY = Math.floor(Math.random() * map.height);
+            let waterClear = true;
+            let treesClear = true;
+            for (let x = playerX - 1; x <= playerX + 1; x++) {
+                for (let y = playerY - 1; y <= playerY + 1; y++) {
+                    if (waterLayer.getTileAt(x, y) !== null) {
+                        waterClear = false;
+                    }
+                    if (treesLayer.getTileAt(x, y) !== null) {
+                        treesClear = false;
+                    }
+                }
+            }
+            loop = !treesClear || !waterClear;
+        } while (loop);
+        this.player.setPosition(playerX * 32, playerY * 32);
         askNewPlayer("player");
 
         waterLayer.setCollision(249);
@@ -141,7 +160,27 @@ export class MetaverseScene extends Phaser.Scene {
                 repeat: -1
             });
 
-            this.cpus.create(map.widthInPixels / 2 - 32 * 4, map.heightInPixels / 2 - 32 * 16, number);
+            let cpuX, cpuY;
+            let loop = true;
+            do {
+                cpuX = Math.floor(Math.random() * map.width);
+                cpuY = Math.floor(Math.random() * map.height);
+                let waterClear = true;
+                let treesClear = true;
+                for (let x = cpuX - 1; x <= cpuX + 1; x++) {
+                    for (let y = cpuY - 1; y <= cpuY + 1; y++) {
+                        if (waterLayer.getTileAt(x, y) !== null) {
+                            waterClear = false;
+                        }
+                        if (treesLayer.getTileAt(x, y) !== null) {
+                            treesClear = false;
+                        }
+                    }
+                }
+                loop = !treesClear || !waterClear;
+            } while (loop);
+
+            this.cpus.create(cpuX * 32, cpuY * 32, number);
         }
         this.cpus.children.iterate((cpu) => {
             this.physics.add.collider(cpu, waterLayer);
@@ -152,30 +191,30 @@ export class MetaverseScene extends Phaser.Scene {
         //    .sprite(96, 96, 'jelly');
 
         //for (const dinoType of this.dinos) {
-            this.anims.create({
-                key: "player" + '-front-walk',
-                frames: this.anims.generateFrameNumbers("player", { frames: [0, 1, 2, 1] }),
-                frameRate: 8,
-                repeat: -1
-            });
-            this.anims.create({
-                key: "player" + '-right-walk',
-                frames: this.anims.generateFrameNumbers("player", { frames: [3, 4, 5, 4] }),
-                frameRate: 8,
-                repeat: -1
-            });
-            this.anims.create({
-                key: "player" + '-left-walk',
-                frames: this.anims.generateFrameNumbers("player", { frames: [6, 7, 8, 7] }),
-                frameRate: 8,
-                repeat: -1
-            });
-            this.anims.create({
-                key: "player" + '-back-walk',
-                frames: this.anims.generateFrameNumbers("player", { frames: [9, 10, 11, 10] }),
-                frameRate: 8,
-                repeat: -1
-            });
+        this.anims.create({
+            key: "player" + '-front-walk',
+            frames: this.anims.generateFrameNumbers("player", { frames: [0, 1, 2, 1] }),
+            frameRate: 8,
+            repeat: -1
+        });
+        this.anims.create({
+            key: "player" + '-right-walk',
+            frames: this.anims.generateFrameNumbers("player", { frames: [3, 4, 5, 4] }),
+            frameRate: 8,
+            repeat: -1
+        });
+        this.anims.create({
+            key: "player" + '-left-walk',
+            frames: this.anims.generateFrameNumbers("player", { frames: [6, 7, 8, 7] }),
+            frameRate: 8,
+            repeat: -1
+        });
+        this.anims.create({
+            key: "player" + '-back-walk',
+            frames: this.anims.generateFrameNumbers("player", { frames: [9, 10, 11, 10] }),
+            frameRate: 8,
+            repeat: -1
+        });
         //}
 
         // this.anims.create({
