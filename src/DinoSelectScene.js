@@ -37,6 +37,7 @@ export class DinoSelectScene extends Phaser.Scene {
 
     create(data) {
         let { width, height } = this.sys.game.canvas;
+        this.add.text(width/2, 24, "Select your Dinosol", { color: 'white', fontSize: '48px ' }).setOrigin(0.5);
         //while (!this.preloaded);
         this.loadDinosols.then(() => {
             this.load.once(Phaser.Loader.Events.COMPLETE, () => {
@@ -45,7 +46,7 @@ export class DinoSelectScene extends Phaser.Scene {
                 console.log(this.load.textureManager.list);
                 console.log(this.dinosolsArray);
                 let x = 125;
-                let y = 125;
+                let y = 150;
                 for (const dinosol of this.dinosolsArray) {
                     console.log(dinosol.metadata.name);
                     console.log(dinosol.metadata.image);

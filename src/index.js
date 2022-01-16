@@ -12,7 +12,7 @@ const config = {
         default: "arcade",
         arcade: {
             gravity: { y: 0 },
-            debug: true,
+            debug: false,
         },
     },
     dom: {
@@ -24,14 +24,14 @@ const config = {
     scale: {
         mode: Phaser.Scale.NONE,
         //autoCenter: Phaser.Scale.CENTER_BOTH,
-        width: window.innerWidth/ZOOM_LEVEL,
-        height: window.innerHeight/ZOOM_LEVEL,
+        width: window.innerWidth / ZOOM_LEVEL,
+        height: window.innerHeight / ZOOM_LEVEL,
         zoom: ZOOM_LEVEL
     },
 };
 
 const Game = new Phaser.Game(config);
 window.addEventListener("resize", () => {
-    Game.scale.resize(window.innerWidth/ZOOM_LEVEL, window.innerHeight/ZOOM_LEVEL);
-},false
+    Game.scale.resize(window.innerWidth / ZOOM_LEVEL, window.innerHeight / ZOOM_LEVEL);
+}, false
 );
