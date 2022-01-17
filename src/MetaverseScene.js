@@ -63,6 +63,8 @@ export class MetaverseScene extends Phaser.Scene {
             let filename = number + ".png";
             this.load.spritesheet(number, 'assets/ai_sprites/' + filename, { frameWidth: 64, frameHeight: 64 });
         }
+
+        this.load.audio("background_music", ["assets/music/background.mp3"]);
     }
 
     create() {
@@ -336,6 +338,9 @@ export class MetaverseScene extends Phaser.Scene {
                 }
             }
         });
+
+        this.backgroundMusic = this.sound.add("background_music", {loop: true});
+        this.backgroundMusic.play();
     }
 
     update(time, delta) {
