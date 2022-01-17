@@ -1,11 +1,12 @@
-import { connectToServer, askNewPlayer, sendPosUpdate } from "./client";
+import { BattleScene } from "./BattleScene";
+import { connectToServer, askNewPlayer, sendPosUpdate } from "./metaverse_client";
 import { choose } from "./utilities";
 
 export class MetaverseScene extends Phaser.Scene {
     //scene;
     controls;
     cursors;
-    NUM_CPUS = 1000;
+    NUM_CPUS = 100;
     player;
     playerSprite;
     playerUsername;
@@ -22,9 +23,13 @@ export class MetaverseScene extends Phaser.Scene {
     }
 
     init(data) {
+        console.log(data);
         this.playerName = data.name;
         this.playerSpriteURL = data.sprite;
         this.playerMetadata = data.metadata;
+        this.playerNFT = data.nft;
+
+        this.currentOpponent = null;
     }
 
     preload() {
@@ -75,13 +80,13 @@ export class MetaverseScene extends Phaser.Scene {
         const rpg = map.addTilesetImage("RPG", "tiles2");
         //const groundLayer = groundMap.createLayer(0, groundTileset, 0, 0); // layer index, tileset, x, y
         const groundLayer = map.createLayer("ground", tuxmon, 0, 0); // layer index, tileset, x, y
-        console.log(groundLayer);
+        //console.log(groundLayer);
         //const waterLayer = waterMap.createLayer(0, waterTileset, 0, 0); // layer index, tileset, x, y
         const waterLayer = map.createLayer("water", tuxmon, 0, 0); // layer index, tileset, x, y
-        console.log(waterLayer);
+        //console.log(waterLayer);
         //const treesLayer = treesMap.createLayer(0, treesTileset, 0, 0); // layer index, tileset, x, y
         const treesLayer = map.createLayer("trees", rpg, 0, 0); // layer index, tileset, x, y
-        console.log(treesLayer);
+        //console.log(treesLayer);
 
         //this.dino = choose(this.dinos);
         this.playerSprite = this.physics.add
@@ -185,6 +190,26 @@ export class MetaverseScene extends Phaser.Scene {
         this.cpus.children.iterate((cpu) => {
             this.physics.add.collider(cpu, waterLayer);
             this.physics.add.collider(cpu, treesLayer);
+        }, this);
+
+        this.battleCollider = this.physics.add.overlap(this.player, this.cpus, this.beginBattle, null, this);
+        this.events.on('wake', function (sys, data) {
+            console.log("Metaverse Scene Awoken");
+            console.log(data);
+
+            if (data.winner === "player") {
+                this.cpus.remove(this.currentOpponent, true, true);
+                this.currentOpponent = null;
+            }
+            else {
+                this.scene.restart({
+                    name: this.playerName,
+                    sprite: this.playerSpriteURL,
+                    metadata: this.playerMetadata,
+                    nft: this.playerNFT
+                });
+            }
+            this.battleCollider.active = true;
         }, this);
 
         //jelly = this.physics.add
@@ -469,4 +494,18 @@ export class MetaverseScene extends Phaser.Scene {
         playerMap[id].destroy();
         delete playerMap[id];
     };
+
+    beginBattle(player, opponent) {
+        console.log("Begin battle!");
+        this.currentOpponent = opponent;
+        //this.scene.get("BattleScene").scene.restart();
+        this.scene.add("BattleScene", BattleScene, true, {
+            name: this.playerName,
+            metadata: this.playerMetadata,
+            nft: this.playerNFT,
+        });
+        //this.scene.bringToTop("BattleScene");
+        this.scene.sleep("MetaverseScene");
+        this.battleCollider.active = false;
+    }
 }

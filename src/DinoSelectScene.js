@@ -69,6 +69,7 @@ export class DinoSelectScene extends Phaser.Scene {
                         name: this.scene.playerName,
                         sprite: gameObject.getData("metadata").image.replace(".png", "_pixel.png"),
                         metadata: gameObject.getData("metadata"),
+                        nft: gameObject.getData("nft"),
                     });
                 });
             });

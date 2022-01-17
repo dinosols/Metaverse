@@ -1,6 +1,7 @@
 import { NameInputScene } from "./NameInputScene";
 import { DinoSelectScene } from "./DinoSelectScene";
 import { MetaverseScene } from "./MetaverseScene";
+//import { BattleScene } from "./BattleScene";
 
 const ZOOM_LEVEL = 1;
 
