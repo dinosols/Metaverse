@@ -50,11 +50,12 @@ const LEAVE_BATTLE = 7;
 export class BattleScene extends Phaser.Scene {
 
     constructor() {
+        console.log("Constructor");
         super();
 
         this.currentState = START_BATTLE;
-        this.playerImage = null;
-        this.opponentImage = null;
+        //this.playerImage = null;
+        //this.opponentImage = null;
         this.timer = 5000.0;
         this.playerName = null;
         this.opponentName = null;
@@ -64,17 +65,18 @@ export class BattleScene extends Phaser.Scene {
     }
 
     init(data) {
-        console.log(data);
-        this.playerName = data.name;
-        this.playerMetadata = data.metadata;
-        this.playerNFT = data.nft;
+        console.log("Init");
+        this.playerName = data.player.name;
+        this.playerMetadata = data.player.metadata;
+        this.playerNFT = data.player.nft;
 
-        this.opponentName = data.name;
-        this.opponentMetadata = data.metadata;
-        this.opponentNFT = data.nft;
+        this.opponentName = data.opponent.name;
+        this.opponentMetadata = data.opponent.metadata;
+        this.opponentNFT = data.opponent.nft;
     }
 
     preload() {
+        console.log("Preload");
         this.dialogModal = this.load.scenePlugin({ key: 'DialogModalPlugin', url: DialogModalPlugin, sceneKey: 'dialogModal' });
 
         this.load.image("background", "assets/images/background.png");
@@ -82,10 +84,14 @@ export class BattleScene extends Phaser.Scene {
         this.load.image("button", "assets/images/button.png");
         this.load.image("button_hover", "assets/images/button_hover.png");
         this.load.image("button_click", "assets/images/button_click.png");
+        this.load.image("playerImage", this.playerMetadata.image);
+        console.log("playerMetadata.image: " + this.playerMetadata.image);
+        this.load.image("opponentImage", this.opponentMetadata.image);
+        console.log("opponentMetadata.image: " + this.opponentMetadata.image);
     }
 
     create() {
-        console.log(this.dialogModal);
+        console.log("Create");
         this.background = this.add.image(this.game.scale.width / 2, this.game.scale.height / 2, "background")
             .setOrigin(.5, .5);
         this.playerStatBox = this.add.container(this.game.scale.width / 2 + 110, this.game.scale.height / 2 + 60 - 50);
@@ -123,38 +129,38 @@ export class BattleScene extends Phaser.Scene {
             btn.setVisible(false);
         }
 
+        connectToServer(this);
+        startBattle(this.playerNFT.mint, this.opponentNFT.mint);
+        //await loadMetadatas();
+
+        this.playerNameText.setText(this.playerName);
+        this.opponentNameText.setText(this.opponentName);
+
+        // let playerImageURL = this.playerMetadata.image;
+        //console.log(playerImageURL);
+        // let loader = new Phaser.Loader.LoaderPlugin(this);
+        // ask the LoaderPlugin to load the texture
+        // loader.image("playerImage", playerImageURL);
+        // loader.start();
+        // loader.once(Phaser.Loader.Events.COMPLETE, () => {
+        this.playerImage = this.add.image(this.game.scale.width / 2 - 200, this.game.scale.height / 2 + 60, "playerImage");
+        this.playerImage.setDisplaySize(200, 200);
+        // });
+
+        // let opponentImageURL = this.opponentMetadata.image;
+        // console.log("opponentImageURL: " + opponentImageURL);
+        // loader.image("opponentImage", opponentImageURL);
+        // loader.start();
+        // loader.once(Phaser.Loader.Events.COMPLETE, () => {
+        this.opponentImage = this.add.image(this.game.scale.width / 2 + 200, this.game.scale.height / 2 - 200, "opponentImage");
+        this.opponentImage.setDisplaySize(200, 200);
+        // });
+
+        this.dialogModal.setText(this.playerName + " vs. " + this.opponentName, true);
+
         const loadBattle = async () => {
             //connectWallet();
             await retrieveStats(this.playerNFT, this.playerMetadata);
-
-            connectToServer(this);
-            startBattle(this.playerNFT.mint, this.opponentNFT.mint);
-            //await loadMetadatas();
-
-            this.playerNameText.setText(this.playerName);
-            this.opponentNameText.setText(this.opponentName);
-
-            let playerImageURL = this.playerMetadata.image;
-            //console.log(playerImageURL);
-            let loader = new Phaser.Loader.LoaderPlugin(this);
-            // ask the LoaderPlugin to load the texture
-            loader.image("playerImage", playerImageURL);
-            loader.once(Phaser.Loader.Events.COMPLETE, () => {
-                this.playerImage = this.add.image(this.game.scale.width / 2 - 200, this.game.scale.height / 2 + 60, "playerImage");
-                this.playerImage.setDisplaySize(200, 200);
-            });
-            loader.start();
-
-            let opponentImageURL = this.opponentMetadata.image;
-            //console.log(opponentImageURL);
-            loader.image("opponentImage", opponentImageURL);
-            loader.once(Phaser.Loader.Events.COMPLETE, () => {
-                this.opponentImage = this.add.image(this.game.scale.width / 2 + 200, this.game.scale.height / 2 - 200, "opponentImage");
-                this.opponentImage.setDisplaySize(200, 200);
-            });
-            loader.start();
-
-            this.dialogModal.setText(this.playerName + " vs. " + this.opponentName, true);
         }
 
         this.loadBattle = loadBattle();
@@ -246,12 +252,18 @@ export class BattleScene extends Phaser.Scene {
                     this.done = true;
                     this.timer = 5000;
                     this.currentState = LEAVE_BATTLE;
+                    console.log("Transition: LEAVE_BATTLE");
                 }
                 break;
             case LEAVE_BATTLE:
-                if (this.timer === 0){
-                    this.scene.run("MetaverseScene", {winner: this.battleWinner});
+                if (this.timer === 0) {
+                    this.opponentImage.destroy();
+                    this.textures.remove("opponentImage");
+                    console.log("Running MetaverseScene");
+                    this.scene.run("MetaverseScene", { winner: this.battleWinner });
+                    console.log("Removing BattleScene");
                     this.scene.remove("BattleScene");
+                    console.log("Complete");
                 }
         }
     }
@@ -275,8 +287,6 @@ export class BattleScene extends Phaser.Scene {
     battleDone(winner) {
         console.log("Transition: BATTLE_COMPLETE");
         this.battleWinner = winner;
-        console.log(this.battleWinner);
-        console.log(winner);
     }
 
     updatePlayerHealth(newHealth) {

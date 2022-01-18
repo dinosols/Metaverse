@@ -6,14 +6,12 @@ export class MetaverseScene extends Phaser.Scene {
     //scene;
     controls;
     cursors;
-    NUM_CPUS = 100;
     player;
     playerSprite;
     playerUsername;
     jellies;
     chickens;
     cpus;
-    //dinos = ["raptor", "ptero", "trex", "trice"];
     dino;
     timer;
     playerMap = {};
@@ -30,6 +28,8 @@ export class MetaverseScene extends Phaser.Scene {
         this.playerNFT = data.nft;
 
         this.currentOpponent = null;
+        this.NUM_CPUS = 200;
+        this.cpusLoaded = false;
     }
 
     preload() {
@@ -58,11 +58,30 @@ export class MetaverseScene extends Phaser.Scene {
         // this.load.spritesheet('jelly', 'assets/sprites/jelly.png', { frameWidth: 32, frameHeight: 32 });
         // this.load.spritesheet('chicken', 'assets/sprites/chicken.png', { frameWidth: 32, frameHeight: 32 });
 
-        for (let i = 1; i <= this.NUM_CPUS; i++) {
-            let number = i.toString().padStart(4, '0');
-            let filename = number + ".png";
-            this.load.spritesheet(number, 'assets/ai_sprites/' + filename, { frameWidth: 64, frameHeight: 64 });
-        }
+        const loadCPUs = async () => {
+            for (let i = 1; i <= this.NUM_CPUS; i++) {
+                let number = i.toString().padStart(3, '0');
+                let metadataFile = 'https://dinosols.s3.amazonaws.com/beta_dinos/' + number + ".json";
+                let metadata = await (await fetch(metadataFile)).json();
+                let species = "";
+                for (const attribute of metadata.attributes) {
+                    if (attribute.trait_type === "Species") {
+                        species = attribute.value;
+                        break;
+                    }
+                }
+
+                let filename = number + "_pixel.png";
+                if (species === "Triceratops" || species === "Tyrannosaurus") {
+                    this.load.spritesheet(number, 'https://dinosols.s3.amazonaws.com/beta_dinos/' + filename, { frameWidth: 64, frameHeight: 64 });
+                }
+                else {
+                    this.load.spritesheet(number, 'https://dinosols.s3.amazonaws.com/beta_dinos/' + filename, { frameWidth: 32, frameHeight: 32 });
+                }
+            }
+        };
+
+        this.loadCPUs = loadCPUs();
 
         this.load.audio("background_music", ["assets/music/background.mp3"]);
     }
@@ -82,13 +101,10 @@ export class MetaverseScene extends Phaser.Scene {
         const rpg = map.addTilesetImage("RPG", "tiles2");
         //const groundLayer = groundMap.createLayer(0, groundTileset, 0, 0); // layer index, tileset, x, y
         const groundLayer = map.createLayer("ground", tuxmon, 0, 0); // layer index, tileset, x, y
-        //console.log(groundLayer);
         //const waterLayer = waterMap.createLayer(0, waterTileset, 0, 0); // layer index, tileset, x, y
         const waterLayer = map.createLayer("water", tuxmon, 0, 0); // layer index, tileset, x, y
-        //console.log(waterLayer);
         //const treesLayer = treesMap.createLayer(0, treesTileset, 0, 0); // layer index, tileset, x, y
         const treesLayer = map.createLayer("trees", rpg, 0, 0); // layer index, tileset, x, y
-        //console.log(treesLayer);
 
         //this.dino = choose(this.dinos);
         this.playerSprite = this.physics.add
@@ -136,65 +152,71 @@ export class MetaverseScene extends Phaser.Scene {
         this.player.body.setSize(this.playerSprite.width, this.playerSprite.height, true);
         this.player.body.setOffset(this.playerSprite.x, this.playerSprite.y, true);
 
-        this.cpus = this.physics.add.group();
-        for (let i = 1; i <= this.NUM_CPUS; i++) {
-            let number = i.toString().padStart(4, '0');
-            let filename = number + ".png";
-            //this.load.spritesheet('dino' + number, 'assets/ai_sprites/' + filename, { framewidth: 64, frameHeight: 64 });
+        this.loadCPUs.then(() => {
+            this.cpus = this.physics.add.group();
+            for (let i = 1; i <= this.NUM_CPUS; i++) {
+                let number = i.toString().padStart(3, '0');
+                let filename = number + "_pixel.png";
+                //this.load.spritesheet('dino' + number, 'assets/ai_sprites/' + filename, { framewidth: 64, frameHeight: 64 });
 
-            this.anims.create({
-                key: number + '-front-walk',
-                frames: this.anims.generateFrameNumbers(number, { frames: [0, 1, 2, 1] }),
-                frameRate: 8,
-                repeat: -1
-            });
-            this.anims.create({
-                key: number + '-right-walk',
-                frames: this.anims.generateFrameNumbers(number, { frames: [3, 4, 5, 4] }),
-                frameRate: 8,
-                repeat: -1
-            });
-            this.anims.create({
-                key: number + '-left-walk',
-                frames: this.anims.generateFrameNumbers(number, { frames: [6, 7, 8, 7] }),
-                frameRate: 8,
-                repeat: -1
-            });
-            this.anims.create({
-                key: number + '-back-walk',
-                frames: this.anims.generateFrameNumbers(number, { frames: [9, 10, 11, 10] }),
-                frameRate: 8,
-                repeat: -1
-            });
+                this.anims.create({
+                    key: number + '-front-walk',
+                    frames: this.anims.generateFrameNumbers(number, { frames: [0, 1, 2, 1] }),
+                    frameRate: 8,
+                    repeat: -1
+                });
+                this.anims.create({
+                    key: number + '-right-walk',
+                    frames: this.anims.generateFrameNumbers(number, { frames: [3, 4, 5, 4] }),
+                    frameRate: 8,
+                    repeat: -1
+                });
+                this.anims.create({
+                    key: number + '-left-walk',
+                    frames: this.anims.generateFrameNumbers(number, { frames: [6, 7, 8, 7] }),
+                    frameRate: 8,
+                    repeat: -1
+                });
+                this.anims.create({
+                    key: number + '-back-walk',
+                    frames: this.anims.generateFrameNumbers(number, { frames: [9, 10, 11, 10] }),
+                    frameRate: 8,
+                    repeat: -1
+                });
 
-            let cpuX, cpuY;
-            let loop = true;
-            do {
-                cpuX = Math.floor(Math.random() * map.width);
-                cpuY = Math.floor(Math.random() * map.height);
-                let waterClear = true;
-                let treesClear = true;
-                for (let x = cpuX - 1; x <= cpuX + 1; x++) {
-                    for (let y = cpuY - 1; y <= cpuY + 1; y++) {
-                        if (waterLayer.getTileAt(x, y) !== null) {
-                            waterClear = false;
-                        }
-                        if (treesLayer.getTileAt(x, y) !== null) {
-                            treesClear = false;
+                let cpuX, cpuY;
+                let loop = true;
+                do {
+                    cpuX = Math.floor(Math.random() * map.width);
+                    cpuY = Math.floor(Math.random() * map.height);
+                    let waterClear = true;
+                    let treesClear = true;
+                    for (let x = cpuX - 1; x <= cpuX + 1; x++) {
+                        for (let y = cpuY - 1; y <= cpuY + 1; y++) {
+                            if (waterLayer.getTileAt(x, y) !== null) {
+                                waterClear = false;
+                            }
+                            if (treesLayer.getTileAt(x, y) !== null) {
+                                treesClear = false;
+                            }
                         }
                     }
-                }
-                loop = !treesClear || !waterClear;
-            } while (loop);
+                    loop = !treesClear || !waterClear;
+                } while (loop);
 
-            this.cpus.create(cpuX * 32, cpuY * 32, number);
-        }
-        this.cpus.children.iterate((cpu) => {
-            this.physics.add.collider(cpu, waterLayer);
-            this.physics.add.collider(cpu, treesLayer);
-        }, this);
+                this.cpus.create(cpuX * 32, cpuY * 32, number);
+            }
+            this.cpus.children.iterate((cpu) => {
+                this.physics.add.collider(cpu, waterLayer);
+                this.physics.add.collider(cpu, treesLayer);
+            }, this);
 
-        this.battleCollider = this.physics.add.overlap(this.player, this.cpus, this.beginBattle, null, this);
+            this.scene.launch("HUDScene");
+
+            this.battleCollider = this.physics.add.overlap(this.player, this.cpus, this.beginBattle, null, this);
+            this.cpusLoaded = true;
+        });
+
         this.events.on('wake', function (sys, data) {
             console.log("Metaverse Scene Awoken");
             console.log(data);
@@ -202,6 +224,7 @@ export class MetaverseScene extends Phaser.Scene {
             if (data.winner === "player") {
                 this.cpus.remove(this.currentOpponent, true, true);
                 this.currentOpponent = null;
+                this.events.emit('updateDinos');
             }
             else {
                 this.scene.restart({
@@ -315,31 +338,7 @@ export class MetaverseScene extends Phaser.Scene {
         //     setPosition: { x: groundMap.widthInPixels / 2, y: groundMap.heightInPixels / 2 - 32 * 16 }
         // });
 
-        var text = this.add.text(300, 10, 'Please enter your name', { color: 'white', fontSize: '20px ' });
-        var element = this.add.dom(400, 0).createFromHTML('assets/text/nameform.html');
-
-        element.addListener('click');
-
-        element.on('click', function (event) {
-
-            if (event.target.name === 'playButton') {
-                var inputText = this.getChildByName('nameField');
-
-                //  Have they entered anything?
-                if (inputText.value !== '') {
-                    //  Turn off the click events
-                    this.removeListener('click');
-
-                    //  Hide the login element
-                    this.setVisible(false);
-
-                    //  Populate the text with whatever they typed in
-                    text.setText('Welcome ' + inputText.value);
-                }
-            }
-        });
-
-        this.backgroundMusic = this.sound.add("background_music", {loop: true});
+        this.backgroundMusic = this.sound.add("background_music", { loop: true });
         this.backgroundMusic.play();
     }
 
@@ -391,7 +390,9 @@ export class MetaverseScene extends Phaser.Scene {
             this.timer -= 1000;
             //jellies.children.iterate(processJelly, this);
             //chickens.children.iterate(processChicken, this);
-            this.cpus.children.iterate(this.processDino, this);
+            if (this.cpusLoaded) {
+                this.cpus.children.iterate(this.processDino, this);
+            }
             sendPosUpdate(this.player.x, this.player.y);
         }
     }
@@ -503,14 +504,47 @@ export class MetaverseScene extends Phaser.Scene {
     beginBattle(player, opponent) {
         console.log("Begin battle!");
         this.currentOpponent = opponent;
+        console.log(this.currentOpponent);
         //this.scene.get("BattleScene").scene.restart();
         this.scene.add("BattleScene", BattleScene, true, {
-            name: this.playerName,
-            metadata: this.playerMetadata,
-            nft: this.playerNFT,
+            player: {
+                name: this.playerName,
+                metadata: this.playerMetadata,
+                nft: this.playerNFT,
+            },
+            opponent: {
+                name: "Wild Dinosol #" + this.currentOpponent.texture.key,
+                metadata: {image: 'https://dinosols.s3.amazonaws.com/beta_dinos/' + this.currentOpponent.texture.key + ".png"},
+                nft: { mint: "beta" + this.currentOpponent.texture.key }
+            }
         });
         //this.scene.bringToTop("BattleScene");
         this.scene.sleep("MetaverseScene");
         this.battleCollider.active = false;
+    }
+}
+
+export class HUDScene extends Phaser.Scene {
+
+    constructor() {
+        super({ key: 'HUDScene', active: false });
+
+        this.dinos = 0;
+    }
+
+    create() {
+
+        //  Grab a reference to the Game Scene
+        let metaverse = this.scene.get('MetaverseScene');
+
+        //  Our Text object to display the Score
+        this.info = this.add.text(10, 10, 'Wild Dinos: ' + metaverse.NUM_CPUS, { font: '24px Arial', fill: '#000000' });
+
+        //  Listen for events from it
+        metaverse.events.on('updateDinos', function () {
+            this.dinos = metaverse.cpus.children.size;
+            this.info.setText('Wild Dinos: ' + this.dinos);
+
+        }, this);
     }
 }

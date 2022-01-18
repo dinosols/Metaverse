@@ -81,9 +81,6 @@ DialogModalPlugin.prototype = {
     },
     // Gets the width of the game (based on the scene)
     _getGameWidth: function () {
-        //return this.scene.sys.game.config.width;
-        console.log(this.scene.sys.game.config.width);
-        console.log(this.scene.game.scale.width);
         return 640;
     },
     // Gets the height of the game (based on the scene)

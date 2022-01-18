@@ -15,11 +15,6 @@ export class DinoSelectScene extends Phaser.Scene {
     }
 
     preload() {
-        const asyncLoader = (loaderPlugin) => new Promise((resolve, reject) => {
-            loaderPlugin.on('filecomplete', resolve).on('loaderror', reject);
-            loaderPlugin.start();
-        });
-
         const loadDinosols = async () => {
             await connectWallet();
             let dinosolsArray = await getDinosols();
@@ -29,7 +24,6 @@ export class DinoSelectScene extends Phaser.Scene {
                 this.load.image(dinosol.metadata.name, dinosol.metadata.image);
             }
             this.load.start();
-            //await asyncLoader(this.load.image('image2', 'path/to/image2.png'));
         };
 
         this.loadDinosols = loadDinosols();
@@ -41,15 +35,9 @@ export class DinoSelectScene extends Phaser.Scene {
         //while (!this.preloaded);
         this.loadDinosols.then(() => {
             this.load.once(Phaser.Loader.Events.COMPLETE, () => {
-                console.log(this.load);
-                console.log(this.load.progress);
-                console.log(this.load.textureManager.list);
-                console.log(this.dinosolsArray);
                 let x = 125;
                 let y = 150;
                 for (const dinosol of this.dinosolsArray) {
-                    console.log(dinosol.metadata.name);
-                    console.log(dinosol.metadata.image);
                     let img = this.add.image(x, y, dinosol.metadata.name);
                     img.setDisplaySize(200, 200);
                     img.setInteractive();
