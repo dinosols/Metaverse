@@ -4,7 +4,7 @@ const CopyPlugin = require("copy-webpack-plugin");
 var glob = require("glob");
 
 const ROOT = path.resolve(__dirname, 'src');
-const DESTINATION = path.resolve(__dirname, 'dist');
+const DESTINATION = path.resolve(__dirname, 'dist/meta/');
 
 module.exports = {
     context: ROOT,
@@ -15,7 +15,8 @@ module.exports = {
 
     output: {
         filename: '[name].bundle.js',
-        path: DESTINATION
+        path: DESTINATION,
+        publicPath: "/meta/"
     },
 
     resolve: {

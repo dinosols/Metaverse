@@ -4,7 +4,7 @@
  *  - Phaser, Rich Davey, Ilija Melentijević
  */
 
-import { connectToServer, requestPlayerUpdate, requestOpponentUpdate, sendMove } from "./battle_client";
+import { connectToServer, requestPlayerUpdate, requestOpponentUpdate, sendMove, cleanupBattle } from "./battle_client";
 import { connectWallet, retrieveStats, startBattle, getPlayerImage, getOpponentImage, loadMetadatas, getPlayerName, getOpponentName } from "./solana_helper";
 import { HealthBar } from "./health_bar";
 import { Button } from "./button";
@@ -50,7 +50,7 @@ const LEAVE_BATTLE = 7;
 export class BattleScene extends Phaser.Scene {
 
     constructor() {
-        console.log("Constructor");
+        console.log("BattleScene Constructor");
         super();
 
         this.currentState = START_BATTLE;
@@ -65,7 +65,10 @@ export class BattleScene extends Phaser.Scene {
     }
 
     init(data) {
-        console.log("Init");
+        console.log("BattleScene Init");
+        console.log(data);
+        this.socket = data.socket;
+
         this.playerName = data.player.name;
         this.playerMetadata = data.player.metadata;
         this.playerNFT = data.player.nft;
@@ -73,10 +76,12 @@ export class BattleScene extends Phaser.Scene {
         this.opponentName = data.opponent.name;
         this.opponentMetadata = data.opponent.metadata;
         this.opponentNFT = data.opponent.nft;
+
+        console.log(data);
     }
 
     preload() {
-        console.log("Preload");
+        console.log("BattleScene Preload");
         this.dialogModal = this.load.scenePlugin({ key: 'DialogModalPlugin', url: DialogModalPlugin, sceneKey: 'dialogModal' });
 
         this.load.image("background", "assets/images/background.png");
@@ -91,7 +96,7 @@ export class BattleScene extends Phaser.Scene {
     }
 
     create() {
-        console.log("Create");
+        console.log("BattleScene Create");
         this.background = this.add.image(this.game.scale.width / 2, this.game.scale.height / 2, "background")
             .setOrigin(.5, .5);
         this.playerStatBox = this.add.container(this.game.scale.width / 2 + 110, this.game.scale.height / 2 + 60 - 50);
@@ -129,8 +134,10 @@ export class BattleScene extends Phaser.Scene {
             btn.setVisible(false);
         }
 
-        connectToServer(this);
-        startBattle(this.playerNFT.mint, this.opponentNFT.mint);
+        connectToServer(this.socket, this);
+        console.log(this.playerNFT.mint);
+        console.log(this.opponentNFT.mint);
+        startBattle(this.socket, this.playerNFT.mint, this.opponentNFT.mint);
         //await loadMetadatas();
 
         this.playerNameText.setText(this.playerName);
@@ -189,11 +196,11 @@ export class BattleScene extends Phaser.Scene {
             case FIRST_MOVE:
                 if (this.enqueuedMoves[0].player === "player") {
                     this.dialogModal.setText(this.playerName + " used " + this.enqueuedMoves[0].move + ".");
-                    requestOpponentUpdate();
+                    requestOpponentUpdate(this.socket);
                 }
                 else {
                     this.dialogModal.setText(this.opponentName + " used " + this.enqueuedMoves[0].move + ".");
-                    requestPlayerUpdate();
+                    requestPlayerUpdate(this.socket);
                 }
                 this.timer = 4000;
                 if (this.battleWinner) {
@@ -209,11 +216,11 @@ export class BattleScene extends Phaser.Scene {
                 if (this.timer === 0) {
                     if (this.enqueuedMoves[1].player === "player") {
                         this.dialogModal.setText(this.playerName + " used " + this.enqueuedMoves[1].move + ".");
-                        requestOpponentUpdate();
+                        requestOpponentUpdate(this.socket);
                     }
                     else {
                         this.dialogModal.setText(this.opponentName + " used " + this.enqueuedMoves[1].move + ".");
-                        requestPlayerUpdate();
+                        requestPlayerUpdate(this.socket);
                     }
                     this.timer = 4000;
                     if (this.battleWinner) {
@@ -242,7 +249,7 @@ export class BattleScene extends Phaser.Scene {
                         btn.setVisible(false);
                     }
                     if (this.battleWinner === "player") {
-                        requestOpponentUpdate();
+                        requestOpponentUpdate(this.socket);
                         this.dialogModal.setText(this.playerName + ' wins!', true);
                     }
                     else {
@@ -258,9 +265,10 @@ export class BattleScene extends Phaser.Scene {
             case LEAVE_BATTLE:
                 if (this.timer === 0) {
                     this.opponentImage.destroy();
+                    cleanupBattle(this.socket);
                     this.textures.remove("opponentImage");
                     console.log("Running MetaverseScene");
-                    this.scene.run("MetaverseScene", { winner: this.battleWinner });
+                    this.scene.wake("MetaverseScene", { winner: this.battleWinner });
                     console.log("Removing BattleScene");
                     this.scene.remove("BattleScene");
                     console.log("Complete");
@@ -269,7 +277,7 @@ export class BattleScene extends Phaser.Scene {
     }
 
     sendMoveToServer(scene, moveIndex) {
-        sendMove(moveIndex);
+        sendMove(scene.socket, moveIndex);
         for (let btn of scene.atkButtons) {
             btn.setVisible(false);
         }

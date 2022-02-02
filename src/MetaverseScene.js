@@ -14,7 +14,6 @@ export class MetaverseScene extends Phaser.Scene {
     cpus;
     dino;
     timer;
-    playerMap = {};
 
     constructor() {
         super('MetaverseScene');
@@ -30,6 +29,7 @@ export class MetaverseScene extends Phaser.Scene {
         this.currentOpponent = null;
         this.NUM_CPUS = 200;
         this.cpusLoaded = false;
+        this.playerMap = {};
     }
 
     preload() {
@@ -41,9 +41,9 @@ export class MetaverseScene extends Phaser.Scene {
             }
         }
 
-        this.load.image("tiles", "../assets/tilemaps/tuxmon-sample-32px.png");
-        this.load.image("tiles2", "../assets/tilemaps/rpg.png");
-        this.load.tilemapTiledJSON("map", "../assets/tilemaps/map.json");
+        this.load.image("tiles", "assets/tilemaps/tuxmon-sample-32px.png");
+        this.load.image("tiles2", "assets/tilemaps/rpg.png");
+        this.load.tilemapTiledJSON("map", "assets/tilemaps/map.json");
 
         if (this.playerSpecies === "Triceratops" || this.playerSpecies === "Tyrannosaurus") {
             this.load.spritesheet('player', this.playerSpriteURL, { frameWidth: 64, frameHeight: 64 });
@@ -87,7 +87,7 @@ export class MetaverseScene extends Phaser.Scene {
     }
 
     create() {
-        connectToServer();
+        this.socket = connectToServer(this);
         this.timer = 0;
         // When loading a CSV map, make sure to specify the tileWidth and tileHeight!
         //const groundMap = this.make.tilemap({ key: "ground", tileWidth: 32, tileHeight: 32 });
@@ -140,7 +140,7 @@ export class MetaverseScene extends Phaser.Scene {
             loop = !treesClear || !waterClear;
         } while (loop);
         this.player.setPosition(playerX * 32, playerY * 32);
-        askNewPlayer("player");
+        askNewPlayer(this.playerSpriteURL, this.playerSpecies);
 
         waterLayer.setCollision(249);
         treesLayer.setCollision(722);
@@ -153,6 +153,8 @@ export class MetaverseScene extends Phaser.Scene {
         this.player.body.setOffset(this.playerSprite.x, this.playerSprite.y, true);
 
         this.loadCPUs.then(() => {
+            while (this.load.isLoading());
+
             this.cpus = this.physics.add.group();
             for (let i = 1; i <= this.NUM_CPUS; i++) {
                 let number = i.toString().padStart(3, '0');
@@ -479,10 +481,24 @@ export class MetaverseScene extends Phaser.Scene {
         }
     }
 
-    addNewPlayer(id, sprite, x, y) {
-        console.log("Adding " + sprite + " at x:" + x.toString() + " y:" + y.toString());
-        playerMap[id] = this.physics.add.sprite(32, 32, sprite);
-        playerMap[id].setPosition(x, y);
+    addNewPlayer(id, sprite, species, x, y) {
+        console.log("Adding " + sprite + " " + species + " at x:" + x + " y:" + y);
+
+        let key = sprite.split('/').pop().replace(".png", "");
+        console.log("Key: " + key);
+        if (species === "Triceratops" || species === "Tyrannosaurus") {
+            this.load.spritesheet(key, sprite, { frameWidth: 64, frameHeight: 64 });
+        }
+        else {
+            this.load.spritesheet(key, sprite, { frameWidth: 32, frameHeight: 32 });
+        }
+
+        this.load.start();
+
+        this.load.on('filecomplete-spritesheet-' + key, function (key, type, data) {
+            this.playerMap[id] = this.physics.add.sprite(32, 32, key);
+            this.playerMap[id].setPosition(x, y);
+        });
     };
 
     movePlayer(id, x, y) {
@@ -491,14 +507,14 @@ export class MetaverseScene extends Phaser.Scene {
         //var duration = distance * 10;
         //tween.to({ x: x, y: y }, duration);
         //tween.start();
-        playerMap[id].setPosition(x, y);
-        console.log(player.x);
-        console.log(player.y);
+        this.playerMap[id].setPosition(x, y);
+        console.log(this.player.x);
+        console.log(this.player.y);
     };
 
     removePlayer(id) {
-        playerMap[id].destroy();
-        delete playerMap[id];
+        this.playerMap[id].destroy();
+        delete this.playerMap[id];
     };
 
     beginBattle(player, opponent) {
@@ -507,6 +523,7 @@ export class MetaverseScene extends Phaser.Scene {
         console.log(this.currentOpponent);
         //this.scene.get("BattleScene").scene.restart();
         this.scene.add("BattleScene", BattleScene, true, {
+            socket: this.socket,
             player: {
                 name: this.playerName,
                 metadata: this.playerMetadata,
@@ -514,9 +531,9 @@ export class MetaverseScene extends Phaser.Scene {
             },
             opponent: {
                 name: "Wild Dinosol #" + this.currentOpponent.texture.key,
-                metadata: {image: 'https://dinosols.s3.amazonaws.com/beta_dinos/' + this.currentOpponent.texture.key + ".png"},
+                metadata: { image: 'https://dinosols.s3.amazonaws.com/beta_dinos/' + this.currentOpponent.texture.key + ".png" },
                 nft: { mint: "beta" + this.currentOpponent.texture.key }
-            }
+            },
         });
         //this.scene.bringToTop("BattleScene");
         this.scene.sleep("MetaverseScene");

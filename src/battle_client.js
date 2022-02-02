@@ -1,10 +1,11 @@
-import { io } from "socket.io-client";
+//import { io } from "socket.io-client";
 
-let socket = null;
-
-export function connectToServer(scene) {
-    //socket = io("http://ec2-174-129-178-49.compute-1.amazonaws.com:8082");
-    socket = io("http://localhost:8082");
+export function connectToServer(socket, scene) {
+    // socket = io("https://dinosolkingdom.app/", {
+    //     path: "/battle/socket.io/",
+    //     transports: [ "websocket" ]
+    // });
+    //socket = io("http://localhost:8082");
 
     socket.on("player_maxhealth", function (data) {
         console.log("player_maxhealth");
@@ -50,18 +51,32 @@ export function connectToServer(scene) {
     });
 }
 
-export function newBattle(player, opponent) {
+export function newBattle(socket, player, opponent) {
+    console.log("New Battle:");
+    console.log(player);
+    console.log(opponent);
     socket.emit("battle", { player: player, opponent: opponent });
 }
 
-export function sendMove(moveIndex) {
+export function sendMove(socket, moveIndex) {
     socket.emit("move", moveIndex);
 }
 
-export function requestPlayerUpdate(){
+export function requestPlayerUpdate(socket){
     socket.emit("request_player_update")
 }
 
-export function requestOpponentUpdate(){
+export function requestOpponentUpdate(socket){
     socket.emit("request_opponent_update");
+}
+
+export function cleanupBattle(socket){
+    socket.off('player_maxhealth');
+    socket.off('player_health');
+    socket.off('player_moves');
+    socket.off('opponent_maxhealth');
+    socket.off('opponent_health');
+    socket.off('opponent_moves');
+    socket.off('moves');
+    socket.off('battledone');
 }

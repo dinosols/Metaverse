@@ -52,8 +52,11 @@ export async function retrieveStats(nft, metadata) {
     console.log(PLAYER_MAP);
 }
 
-export function startBattle(playerToken, opponentToken) {
-    newBattle(playerToken, opponentToken);
+export function startBattle(socket, playerToken, opponentToken) {
+    console.log("Start Battle");
+    console.log(playerToken);
+    console.log(opponentToken);
+    newBattle(socket, playerToken, opponentToken);
 }
 
 export async function getGameMetadata(token) {
