@@ -18,7 +18,7 @@ var PLAYER_MAP = {
 export async function connectWallet() {
     while (!window.solana);
     await window.solana.connect();
-    connection = new Connection("https://ssc-dao.genesysgo.net/");
+    connection = new Connection("https://rpc.helius.xyz/?api-key=496a5d6d-10a4-4158-89e1-b33d8cf08f51");
 }
 
 export async function getDinosols() {
